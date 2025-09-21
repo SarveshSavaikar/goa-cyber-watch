@@ -3,8 +3,47 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { AlertsFeed } from "@/components/dashboard/AlertsFeed";
 import { CategoryChart } from "@/components/dashboard/CategoryChart";
 import cyberHeroImage from "@/assets/cyber-hero.jpg";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
+  const [statsData, setStatsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      // Define the API URL
+      const apiUrl = "http://localhost:8000/dashboard/stats";
+      
+      const response = await fetch(apiUrl);
+      console.log("response :- ",response)
+      // Handle HTTP errors
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("data.data : ",data.data.overview)
+      // Assuming data.data holds the stats object
+      if (data.status === "success" && data.data) {
+        setStatsData(data.data);
+      } else {
+        throw new Error(data.message || "Failed to fetch data.");
+      }
+    } catch (e) {
+      console.error("Error fetching dashboard stats:", e);
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
+
+  console.log(statsData)
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -35,27 +74,27 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             title="Posts Scanned Today"
-            value="12,847"
+            value={loading ? " " : statsData.overview.total_posts_scanned}
             change={{ value: "+15%", type: "increase" }}
             icon={<Search className="w-8 h-8 text-primary" />}
           />
           <StatsCard
             title="Suspicious Content"
-            value="293"
+            value={loading ? " " : statsData.overview.suspicious_content}
             change={{ value: "+8%", type: "increase" }}
             icon={<AlertTriangle className="w-8 h-8 text-risk-medium" />}
             variant="warning"
           />
           <StatsCard
             title="High-Risk Alerts"
-            value="47"
+            value={loading ? " " : statsData.overview.high_risk_alerts}
             change={{ value: "+23%", type: "increase" }}
             icon={<Shield className="w-8 h-8 text-risk-high" />}
             variant="danger"
           />
           <StatsCard
             title="Fake Hotels Detected"
-            value="12"
+            value={loading ? " " : statsData.overview.fake_hotels_detected}
             change={{ value: "-5%", type: "decrease" }}
             icon={<Hotel className="w-8 h-8 text-info" />}
           />

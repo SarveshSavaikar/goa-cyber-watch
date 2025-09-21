@@ -2,6 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, ExternalLink, MessageSquare, Globe, Camera } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface Alert {
   id: string;
@@ -48,6 +49,41 @@ const mockAlerts: Alert[] = [
 ];
 
 export function AlertsFeed() {
+
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const API_URL = "http://localhost:8000/dashboard/feed?limit=20&min_risk_score=0";
+    console.log("lol")
+    const fetchData = async () => {
+      try {
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error ! : ${response.status}`)
+        }
+
+        const result = await response.json();
+        console.log("The o/p :- ",result)
+        setData(result)
+      }
+      catch (error) {
+        // Handle any errors that occurred during the fetch
+        console.error("Failed to fetch data:", error);
+        setError(error.message); // Set the error message to state
+      } finally {
+        // This block runs after the try or catch block, regardless of success or failure
+        setLoading(false); // Set loading to false once the request is complete
+      }
+    };
+    console.log("The data of charts :- ", data)
+    // Call the fetchData function when the component mounts
+    fetchData();
+  }, []
+  );
+
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case "telegram":
@@ -101,7 +137,7 @@ export function AlertsFeed() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {mockAlerts.map((alert) => (
+        {data.map((alert) => (
           <div
             key={alert.id}
             className={`p-3 rounded-lg border transition-all duration-200 hover:scale-[1.02] cursor-pointer ${getRiskStyles(alert.riskLevel)}`}
@@ -124,15 +160,14 @@ export function AlertsFeed() {
               {alert.snippet}
             </p>
             <div className="flex items-center justify-between">
-              <Badge 
-                variant="outline" 
-                className={`text-xs ${
-                  alert.riskLevel === "high" 
-                    ? "text-risk-high border-risk-high" 
-                    : alert.riskLevel === "medium" 
-                    ? "text-risk-medium border-risk-medium"
-                    : "text-risk-low border-risk-low"
-                }`}
+              <Badge
+                variant="outline"
+                className={`text-xs ${alert.riskLevel === "high"
+                    ? "text-risk-high border-risk-high"
+                    : alert.riskLevel === "medium"
+                      ? "text-risk-medium border-risk-medium"
+                      : "text-risk-low border-risk-low"
+                  }`}
               >
                 Risk: {alert.riskLevel.toUpperCase()}
               </Badge>
